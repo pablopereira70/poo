@@ -253,6 +253,8 @@ console.log(t4.ehEscaleno());
 console.log(t4.ehIsoceles());     
 ```
 
+[Ver código](questao_6.ts)
+
 #### Saída
 
 ```Powershell
@@ -272,4 +274,214 @@ true
 false
 false
 true
+```
+
+### Questão 7
+
+```typescript
+class Equipamento {
+    ligado : boolean = false;
+
+    ligar(): void {
+        if(!this.ligado) {
+            this.ligado = true;
+        }
+    }
+
+    desligar(): void {
+        if(this.ligado) {
+            this.ligado = false;
+        }
+    }
+
+    inverter(): void {
+        this.ligado = !this.ligado;
+    }
+
+    estaLigado(): boolean {
+        if(this.ligado) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+let e1 : Equipamento = new Equipamento();
+console.log(e1.estaLigado());
+e1.ligar();
+console.log(e1.estaLigado());
+e1.desligar();
+console.log(e1.estaLigado());
+e1.inverter();
+console.log(e1.estaLigado());
+```
+
+[Ver código](questao_7.ts)
+
+#### Saída
+
+```powershell
+false
+true
+false
+true
+```
+
+### Questão 8
+
+```typescript
+class Conta {
+numero: string;
+saldo: number;
+
+constructor(numero: string, saldo: number) {
+this.numero = numero;
+this.saldo = saldo;
+    }
+
+sacar(valor: number): boolean {
+    let resto = this.saldo - valor;
+    
+    if(!(resto < 0)) {
+        this.saldo = resto;
+        return true;
+        }
+    return false;
+    }
+
+depositar(valor: number): void {
+    this.saldo = this.saldo + valor;
+    }
+
+transferir(ContaDestino: Conta, valor: number): boolean {
+    if(this.sacar(valor)) {
+        ContaDestino.depositar(valor);
+        return true;
+        }
+    return false;
+    }
+
+consultarSaldo(): number {
+    return this.saldo;
+    }
+}
+
+const c1 = new Conta("1111-1", 1000);
+const c2 = new Conta("2222-2", 500);
+
+console.log(c1);
+console.log(c2);
+
+console.log(c1.sacar(300));         
+console.log(c1.consultarSaldo());
+
+console.log(c1.sacar(5000));         
+console.log(c1.consultarSaldo());
+
+c2.depositar(200);
+console.log(c2.consultarSaldo());
+
+console.log(c1.transferir(c2, 400));  
+console.log(c1.consultarSaldo()); 
+console.log(c2.consultarSaldo());
+
+console.log(c1.transferir(c2, 10000)); 
+console.log(c1.consultarSaldo()); 
+console.log(c2.consultarSaldo()); 
+
+console.log(c1.sacar(c1.consultarSaldo()));           
+console.log(c1.consultarSaldo()); 
+```
+
+[Ver código](questao_8.ts)
+
+#### Saída
+
+```powershell
+Conta { numero: '1111-1', saldo: 1000 }
+Conta { numero: '2222-2', saldo: 500 }
+true
+700
+false
+700
+700
+true
+300
+1100
+false
+300
+1100
+true
+0
+```
+
+### Questão 9
+
+Para operações mais críticas, como operações financeiras, retornar `true` ou `false` é essencial porque o chamador precisa saber se a operação foi concluída. Já ações simples como atacar um jogador morto podem ser ignoradas pelo jogo.
+
+### Questão 10
+
+```typescript
+class Jogador {
+    forca : number;
+    nivel : number;
+    pontos_atuais : number;
+
+    constructor(forca:number, nivel:number, pontos_atuais:number) {
+        this.forca = forca;
+        this.nivel = nivel;
+        this.pontos_atuais = pontos_atuais;
+    }
+
+    calcularAtaque(): number {
+        return this.forca * this.nivel;
+    }
+
+    atacar(atacado: Jogador): void {
+        if(atacado.estaVivo()) {
+            atacado.pontos_atuais = atacado.pontos_atuais - this.calcularAtaque();
+        }
+    }
+
+    estaVivo(): boolean {
+        return this.pontos_atuais > 0;
+    }
+}
+
+let j1 : Jogador = new Jogador(10, 5, 100);
+let j2 : Jogador = new Jogador(20, 1, 80);
+
+console.log(j1);
+console.log(j2);
+
+console.log(j1.calcularAtaque());
+console.log(j2.calcularAtaque());
+
+j1.atacar(j2);
+j2.atacar(j1);
+
+console.log(j1);
+console.log(j2);
+
+j1.atacar(j2);
+j2.atacar(j1);
+
+console.log(j1.estaVivo());
+console.log(j2.estaVivo());
+```
+
+[Ver código](questao_10.ts)
+
+#### Saída
+
+```powershell
+Jogador { forca: 10, nivel: 5, pontos_atuais: 100 }
+Jogador { forca: 20, nivel: 1, pontos_atuais: 80 }
+50
+20
+Jogador { forca: 10, nivel: 5, pontos_atuais: 80 }
+Jogador { forca: 20, nivel: 1, pontos_atuais: 30 }
+true
+false
 ```

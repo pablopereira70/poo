@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class Circulo {
-    raio = 0;
-    pi = 3.14;
+    constructor() {
+        this.raio = 0;
+        this.pi = 3.14;
+    }
     calcularArea() {
         return this.pi * this.raio ** 2;
     }

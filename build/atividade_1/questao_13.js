@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class Numero {
-    valor = 0;
+    constructor() {
+        this.valor = 0;
+    }
     ehPar() {
         return this.valor % 2 == 0;
     }

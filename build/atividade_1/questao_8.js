@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class Retangulo {
-    base = 0;
-    altura = 0;
+    constructor() {
+        this.base = 0;
+        this.altura = 0;
+    }
     calcularArea() {
         return this.base * this.altura;
     }

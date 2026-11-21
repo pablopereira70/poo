@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class SituacaoFinanceira {
-    creditos = 0;
-    debitos = 0;
+    constructor() {
+        this.creditos = 0;
+        this.debitos = 0;
+    }
     calcularSaldo() {
         return this.creditos - this.debitos;
     }

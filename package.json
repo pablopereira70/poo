@@ -11,7 +11,12 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "tsc": "^2.0.4",
+    "prompt-sync": "^4.2.0",
+    "tsc": "^2.0.4"
+  },
+  "devDependencies": {
+    "@types/prompt-sync": "^4.2.3",
+    "ts-node": "^10.9.2",
     "typescript": "^7.0.2"
   }
 }

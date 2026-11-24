@@ -1,4 +1,4 @@
-import { Banco, Conta, Cliente } from "./banco";
+import { Banco, Conta, Cliente, ContaPoupanca, ContaImposto, ContaBonus } from "./banco";
 import promptSync = require("prompt-sync");
 
 const input = promptSync();
@@ -8,7 +8,11 @@ class App {
 
     constructor() {
         this.b = new Banco();
-        this.b.carregarDados();
+    }
+
+    async inicializar(): Promise<void> {
+        await this.b.carregarContas();
+        await this.menu();
     }
 
     // ---------- helpers ----------
@@ -24,7 +28,7 @@ class App {
     }
 
     // ---------- menu ----------
-    menu(): void {
+    async menu(): Promise<void> {
         let opcao = "";
         do {
             console.log(`
@@ -32,14 +36,14 @@ class App {
 Contas:
 00 Inserir         01 Consultar       02 Sacar
 03 Depositar       04 Excluir         05 Transferir
-06 Totalizações    07 Contas sem cliente
+06 Totalizações    07 Render Juros    08 Contas sem cliente
 
 Clientes:
 20 Inserir         21 Consultar       22 Associar
 23 Excluir         24 Mudar titularidade
 25 Transferir para várias
 
-0  Sair
+0  Sair            1 SalvarContas
 ================`);
             opcao = input("Opção: ").trim();
             switch (opcao) {
@@ -50,28 +54,54 @@ Clientes:
                 case "04": this.excluirConta(); break;
                 case "05": this.transferirConta(); break;
                 case "06": this.totalizacoes(); break;
-                case "07": this.listarSemCliente(); break;
+                case "07": this.renderJuros(); break;
+                case "08": this.listarSemCliente(); break;
                 case "20": this.inserirCliente(); break;
                 case "21": this.consultarCliente(); break;
                 case "22": this.associarContaCliente(); break;
                 case "23": this.excluirCliente(); break;
                 case "24": this.mudarTitularidade(); break;
                 case "25": this.transferirParaVarias(); break;
+                case "1" : this.salvarContas(); break;
                 case "0": console.log("Encerrando..."); break;
                 default: console.log("Opção inválida.");
             }
         } while (opcao !== "0");
+        this.salvarContas();
     }
 
     // ---------- contas ----------
     private inserirConta(): void {
+        console.log("Tipo de conta: enter=Comum | 1=Poupança | 2=Com Imposto | 3=Com Bônus");
+        const tipo = input("Escolha (enter/1/2/3): ").trim();
+
         const id = this.lerNumero("id: ");
         const numero = input("numero: ").trim();
         const saldo = this.lerNumero("saldo inicial: ");
-        const data = this.lerData("data de abertura (dd/mm/aaaa): ");
         const cpf = input("CPF do titular (enter = nenhum): ").trim();
 
-        const conta = new Conta(id, numero, saldo, data, null);
+        let conta: Conta;
+
+        switch (tipo) {
+            case "1": { // Poupança
+                const taxaJuros = this.lerNumero("taxa de juros (% a.m.): ");
+                conta = new ContaPoupanca(id, numero, saldo, null, taxaJuros);
+                break;
+            }
+            case "2": { // Com Imposto
+                const taxaDesconto = this.lerNumero("taxa de desconto no saque (%): ");
+                conta = new ContaImposto(id, numero, saldo, null, taxaDesconto);
+                break;
+            }
+            case "3": { // Com Bônus
+                const taxaBonus = this.lerNumero("taxa de bônus no deposito (%): ");
+                conta = new ContaBonus(id, numero, saldo, null, taxaBonus);
+                break;
+            }
+            default: // Comum
+                conta = new Conta(id, numero, saldo, null);
+        }
+
         this.b.inserirConta(conta);
 
         if (cpf) this.b.associarContaCliente(numero, cpf);
@@ -176,7 +206,18 @@ Clientes:
         this.b.transferirParaVarias(origem, destinos, valor);
         console.log("Transferências processadas.");
     }
+
+    private renderJuros(): void{
+        const numero = input("numero da conta: ").trim();
+        this.b.renderJuros(numero);
+        console.log("Rendimento tentado.");
+    }
+
+    private salvarContas(): void{
+        this.b.salvarContas();
+        console.log("Salvando contas...");
+    }
 }
 
 const app = new App();
-app.menu();
+app.inicializar();

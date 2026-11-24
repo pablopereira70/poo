@@ -1,3 +1,6 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+
 export class Cliente{
     private _id:number;
     private nome: string;
@@ -50,14 +53,12 @@ export class Conta{
     private _numero:string;
     private _saldo:number;
     private _cliente:Cliente|null;
-    private dataDeAbertura: Date;
 
-    constructor(id:number, numero:string, saldo: number, data:Date, cliente: Cliente|null){
+    constructor(id:number, numero:string, saldo: number, cliente: Cliente|null){
         this._id = id;
         this._numero = numero;
         this._saldo  = saldo;
         this._cliente = cliente;
-        this.dataDeAbertura = data;
     }
 
     depositar(valor: number): boolean{
@@ -67,7 +68,7 @@ export class Conta{
     }
 
     sacar(valor: number): boolean{
-         if(valor <= 0) return false;
+        if(valor <= 0) return false;
         if(valor > this._saldo) return false;
         this._saldo -= valor;
         return true;
@@ -101,6 +102,61 @@ export class Conta{
 
     set cliente(cliente: Cliente | null){
         this._cliente = cliente;
+    }
+}
+
+export class ContaPoupanca extends Conta{
+    private _taxaJuros : number;
+
+    constructor(id:number, numero:string, saldo: number, cliente: Cliente|null, taxaJuros:number){
+        super(id, numero, saldo, cliente);
+        this._taxaJuros = taxaJuros;
+    }
+
+    public renderJuros(): void{
+        this.depositar(this.saldo * this._taxaJuros/100)
+    }
+
+    get taxaJuros(): number{
+        return this._taxaJuros;
+    }
+}
+
+export class ContaImposto extends Conta{
+    private _taxaDesconto : number;
+
+    constructor(id:number, numero:string, saldo: number, cliente: Cliente|null, taxaDesconto:number){
+        super(id, numero, saldo, cliente);
+        this._taxaDesconto = taxaDesconto;
+    }
+
+    sacar(valor: number): boolean{
+        if(valor <= 0) return false;
+        if(valor + valor * this._taxaDesconto/100 > this.saldo) return false;
+        return super.sacar(valor + valor * this._taxaDesconto/100);
+    }
+
+    get taxaDesconto(): number{
+        return this._taxaDesconto;
+    }
+}
+
+export class ContaBonus extends Conta{
+    private _taxaBonus : number;
+    
+    constructor(id:number, numero:string, saldo: number, cliente: Cliente|null, taxaBonus: number){
+        super(id, numero, saldo, cliente);
+        this._taxaBonus = taxaBonus;
+    }
+
+    depositar(valor: number): boolean {
+        if(valor <= 0) return false;
+        let valorBonus : number = valor * this._taxaBonus;
+        return super.depositar(valor + valorBonus);
+    }
+
+    get taxaBonus(): number{
+        return this._taxaBonus;
     }
 }
 
@@ -302,15 +358,105 @@ export class Banco{
         this.inserirCliente(c4);
         let c5 = new Cliente(5, "Fernado", "0.8-7", new Date(2005, 8, 13));
         this.inserirCliente(c5);
-        let k1 = new Conta(1, "1001", 500, new Date(2010,2,10), c1);
+        let k1 = new Conta(1, "1001", 500, c1);
         this.inserirConta(k1);
-        let k2 = new Conta(2, "1002", 1000, new Date(2020,1,1), c1);
+        let k2 = new Conta(2, "1002", 1000, c1);
         this.inserirConta(k2);
-        let k3 = new Conta(3, "1090", 150, new Date(2020,1,1), c2);
+        let k3 = new Conta(3, "1090", 150, c2);
         this.inserirConta(k3);
-        let k4 = new Conta(4, "1100", 5000, new Date(2008, 9, 18), null);
+        let k4 = new Conta(4, "1100", 5000, null);
         this.inserirConta(k4);
-        let k5 = new Conta(5, "1190", 0, new Date(2009, 10, 26), null);
+        let k5 = new Conta(5, "1190", 0, null);
         this.inserirConta(k5);
     }
+
+    renderJuros(numero: string): void{
+        let conta = this.consultarConta(numero);
+
+        if(conta == null) return;
+
+        if(conta instanceof ContaPoupanca){
+            conta.renderJuros();
+        }
+    }
+
+    async carregarContas(): Promise<void>{
+        const dir = path.resolve(process.cwd(), "src\\atividade_4_pt2");
+        const filePath = path.join(dir, "contas.txt");
+        const texto: string = await fs.readFile(filePath, "utf-8");
+
+        if(texto.length == 0) {
+            this.carregarDados();
+            return;
+        }
+
+        const linhas = texto.split(/\r?\n/);
+
+        let campos;
+        let tipo;
+        let id;
+        let numero;
+        let saldo;
+        let cliente;
+        
+        for(let linha of linhas){
+            campos = linha.split(";");
+            if(campos.length < 5) continue;
+            tipo = campos[0];
+            id = Number(campos[1]);
+            numero = campos[2]!;
+            saldo = Number(campos[3]);
+            cliente = this.consultarCliente(campos[4]!);
+
+            switch(tipo){
+                case "C": 
+                    let conta : Conta = new Conta(id, numero, saldo, cliente);
+                    this.inserirConta(conta);
+                    break;
+                case "CB":
+                    if(campos.length != 6) continue;
+                    let taxaBonus = Number(campos[5]);
+                    let contaBonus : ContaBonus = new ContaBonus(id, numero, saldo, cliente, taxaBonus);
+                    this.inserirConta(contaBonus);
+                    break;
+                case "CP":
+                    if(campos.length != 6) continue;
+                    let taxaJuros = Number(campos[5]);
+                    let contaPoupanca : ContaPoupanca = new ContaPoupanca(id, numero, saldo, cliente, taxaJuros);
+                    this.inserirConta(contaPoupanca);
+                    break;
+                case "CI":
+                    if(campos.length != 6) continue;
+                    let taxaDesconto = Number(campos[5]);
+                    let contaImposto : ContaImposto = new ContaImposto(id, numero, saldo, cliente, taxaDesconto);
+                    this.inserirConta(contaImposto);
+            }
+        }
+    }
+
+    async salvarContas(): Promise<void>{
+        const dir = path.resolve(process.cwd(), "src\\atividade_4_pt2");
+        const filePath = path.join(dir, "contas.txt");
+
+        let linhas : string = '';
+
+        for(let conta of this.contas){
+            let refcliente : string | null;
+
+            if(conta.cliente != null) refcliente = conta.cliente.cpf;
+            else refcliente = null;
+
+            if(conta instanceof ContaPoupanca){
+                linhas += `CP;${conta.id};${conta.numero};${conta.saldo};${refcliente};${conta.taxaJuros}\n` 
+            } else if (conta instanceof ContaImposto){
+                linhas += `CI;${conta.id};${conta.numero};${conta.saldo};${refcliente};${conta.taxaDesconto}\n` 
+            } else if(conta instanceof ContaBonus){
+                linhas += `CB;${conta.id};${conta.numero};${conta.saldo};${refcliente};${conta.taxaBonus}\n` 
+            } else {
+                linhas += `C;${conta.id};${conta.numero};${conta.saldo};${refcliente}\n` 
+            }
+        }
+
+        await fs.writeFile(filePath, linhas,"utf-8");
+    }    
 }

@@ -15,8 +15,10 @@
     "tsc": "^2.0.4"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "@types/prompt-sync": "^4.2.3",
     "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
 }
